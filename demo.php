@@ -118,6 +118,7 @@ function create_subscription( $access_token, $api_root, $body ) {
   $header = array('Content-Type' => 'application/json');
   $header = array_merge( $header, $auth_header );
 
+  // POST /v1/orgs/<org id>/subscriptions/
   $url = $endpoint.$api_root->_links->subscriptions->href;
 
   $response = Requests::post( $url, $header, json_encode($data) );
@@ -133,11 +134,23 @@ function get_subscriptions( $access_token, $api_root) {
   $header = array();
   $header = array_merge( $header, $auth_header );
 
+  // GET /v1/orgs/<org id>/subscriptions/
   $url = $endpoint.$api_root->_links->subscriptions->href;
 
   $response = Requests::get( $url, $header );
 
   return json_decode($response->body);
+}
+
+function get_subscription_by_ref( $access_token, $api_root, $ref) {
+  $subscriptions = get_subscriptions( $access_token, $api_root );
+
+  for ($i=0, $c=count($subscriptions->content); $i<$c; $i++) {
+    if ( $ref == $subscriptions->content[$i]->content->remoteRef ) {
+      return $subscriptions->content[$i];
+    }
+  }
+  return null;
 }
 
 function get_sessions( $access_token, $api_root) {
@@ -148,6 +161,7 @@ function get_sessions( $access_token, $api_root) {
   $header = array();
   $header = array_merge( $header, $auth_header );
 
+  // GET /v1/orgs/<org id>/sessions/
   $url = $endpoint.$api_root->_links->sessions->href;
 
   $response = Requests::get( $url, $header );
@@ -185,6 +199,22 @@ function delete_subscription( $access_token, $subscription) {
   return json_decode($response->body);
 }
 
+function delete_subscription_by_id( $access_token, $api_root, $subscriptionId ) {
+  global $endpoint;
+
+  // Delete a previously created subscription.
+  $auth_header = build_oauth2_auth_header( $access_token );
+  $header = array();
+  $header = array_merge( $header, $auth_header );
+
+  // DELETE /v1/orgs/<org id>/subscriptions/<subscriptionId>
+  $url = $endpoint.$api_root->_links->subscriptions->href.'/'.$subscriptionId;
+
+  $response = Requests::delete( $url, $header );
+
+  return json_decode($response->body);
+}
+
 // Recover an access token
 $grant = get_access_token( $api_key, $api_key_secret );
 
@@ -212,12 +242,11 @@ $subscriptions = get_subscriptions( $grant->access_token, $api_root );
 //var_dump(count($subscriptions->content));
 
 
-/*
 // Delete the entire set of subscriptions traversing forward
 for ($i=0, $c=count($subscriptions->content); $i<$c; $i++) {
   delete_subscription($grant->access_token, $subscriptions->content[$i]);
 }
-*/
+
 
 /*
 // Get the entire set of subscriptions traversing backward
@@ -228,7 +257,6 @@ while ($subscriptions->_links->previous) {
 
 // delete the subscription we created. Don't do this if you want your user to access coviu.
 delete_subscription( $grant->access_token, $subscription );
-
 
 
 // generate a random string for the session Id.
