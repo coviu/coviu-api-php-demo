@@ -1,4 +1,4 @@
-This is a rewrite of the python demo in the enterprise-api-demo repository in PHP.
+This is a rewrite of the python demo in the coviu-api-python-demo repository in PHP.
 
 To install all dependencies:
 ```
